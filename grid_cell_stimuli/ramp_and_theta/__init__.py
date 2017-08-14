@@ -3,18 +3,12 @@ import matplotlib.pyplot as pl
 import numpy as np
 import os
 from scipy.signal import firwin, freqz, kaiserord
-from grid_cell_stimuli import compute_fft
-
-
-def nyq_from_dt(dt_sec):
-    sample_rate = 1.0 / dt_sec
-    nyq_rate = sample_rate / 2.0
-    return nyq_rate
+from grid_cell_stimuli import compute_fft, get_nyquist_rate
 
 
 def get_ramp_and_theta(v, dt, ripple_attenuation, transition_width, cutoff_ramp, cutoff_theta_low, cutoff_theta_high):
     dt_sec = dt / 1000
-    nyq_rate = nyq_from_dt(dt_sec)
+    nyq_rate = get_nyquist_rate(dt_sec)
     N, beta = kaiserord(ripple_attenuation, transition_width / nyq_rate)
     assert N < len(v)  # filter not bigger than data to filter
     filter_ramp = firwin(N + 1, cutoff_ramp / nyq_rate, window=('kaiser', beta), pass_zero=True)
@@ -27,7 +21,7 @@ def get_ramp_and_theta(v, dt, ripple_attenuation, transition_width, cutoff_ramp,
 
 
 def plot_filter(filter_ramp, filter_theta, dt, save_dir):
-    nyq_rate = nyq_from_dt(dt / 1000)
+    nyq_rate = get_nyquist_rate(dt / 1000)
 
     pl.figure()
     w, h = freqz(filter_ramp, worN=int(round(nyq_rate / 0.01)))

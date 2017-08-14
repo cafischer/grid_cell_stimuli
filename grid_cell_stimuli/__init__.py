@@ -18,3 +18,9 @@ def compute_fft(y, dt):
     freqs = freqs[idx]
     fft_y = fft_y[idx]
     return fft_y, freqs
+
+
+def get_nyquist_rate(dt_sec):
+    sample_rate = 1.0 / dt_sec
+    nyq_rate = sample_rate / 2.0
+    return nyq_rate
