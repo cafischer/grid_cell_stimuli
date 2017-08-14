@@ -15,6 +15,7 @@ def antialias_and_downsample(v, dt, ripple_attenuation, transition_width, cutoff
     v_antialiased = np.convolve(v, filter, mode='same')
     t_antialiased = np.arange(0, len(v_antialiased) * dt, dt)
 
+    assert dt_new_max > dt
     downsample_rate = int(np.floor(dt_new_max / dt))
     v_downsampled = v_antialiased[::downsample_rate]
     t_downsampled = t_antialiased[::downsample_rate]
@@ -22,11 +23,9 @@ def antialias_and_downsample(v, dt, ripple_attenuation, transition_width, cutoff
 
 
 def plot_v_downsampled(v, t, v_downsampled, t_downsampled, save_dir):
-    idx_cut = int(np.ceil((len(t) - len(v_downsampled)) / 2.0))
-
     pl.figure()
     pl.plot(t, v, 'b', label='$V_{APs\ removed}$')
-    pl.plot(t_downsampled + t[idx_cut], v_downsampled, 'g', label='$V_{downsampled}$')
+    pl.plot(t_downsampled, v_downsampled, 'g', label='$V_{downsampled}$')
     pl.ylabel('Membrane potential (mV)', fontsize=16)
     pl.xlabel('Time (ms)', fontsize=16)
     pl.legend(fontsize=16)
