@@ -13,10 +13,18 @@ def remove_APs(v, t, AP_threshold, t_before, t_after):
     idx_before = int(round(t_before / dt))
     idx_after = int(round(t_after / dt))
 
+    start_idxs, end_idxs = get_start_end_indices(AP_onsets, idx_after, idx_before, v_APs_removed)
+
+    for s, e in zip(start_idxs, end_idxs):
+        slope = (v_APs_removed[s] - v_APs_removed[e]) / (t[s] - t[e])
+        v_APs_removed[s:e + 1] = slope * np.arange(0, e - s + 1, 1) * dt + v_APs_removed[s]
+    return v_APs_removed
+
+
+def get_start_end_indices(AP_onsets, idx_after, idx_before, v_APs_removed):
     diff_onsets = np.diff(AP_onsets)
     diff_to_small = (diff_onsets <= idx_before + idx_after).astype(int)
     diff_to_small = np.concatenate((diff_to_small, np.array([0])))
-
     start_burst_idxs = np.where(np.diff(diff_to_small) == 1)[0] + 1
     end_burst_idxs = np.where(np.diff(diff_to_small) == -1)[0] + 1
     diff_to_small[end_burst_idxs] = 1  # do not mistake burst ends as single spikes
@@ -25,19 +33,13 @@ def remove_APs(v, t, AP_threshold, t_before, t_after):
                                      single_spike_idxs))
     end_selector = np.concatenate((end_burst_idxs,
                                    single_spike_idxs))
-    idx_start = AP_onsets[start_selector]
-    idx_end = AP_onsets[end_selector]
-
-    idx_start -= idx_before
-    idx_end += idx_after
-
-    idx_start[idx_start < 0] = 0
-    idx_end[idx_end >= len(v_APs_removed)] = len(v_APs_removed) - 1
-
-    for s, e in zip(idx_start, idx_end):
-        slope = (v_APs_removed[s] - v_APs_removed[e]) / (t[s] - t[e])
-        v_APs_removed[s:e + 1] = slope * np.arange(0, e - s + 1, 1) * dt + v_APs_removed[s]
-    return v_APs_removed
+    start_idxs = AP_onsets[start_selector]
+    end_idxs = AP_onsets[end_selector]
+    start_idxs -= idx_before
+    end_idxs += idx_after
+    start_idxs[start_idxs < 0] = 0
+    end_idxs[end_idxs >= len(v_APs_removed)] = len(v_APs_removed) - 1
+    return start_idxs, end_idxs
 
 
 def plot_v_APs_removed(v_APs_removed, v, t, save_dir):
