@@ -25,7 +25,7 @@ def get_start_end_indices(AP_onsets, idx_after, idx_before, v_APs_removed):
     diff_onsets = np.diff(AP_onsets)
     diff_to_small = (diff_onsets <= idx_before + idx_after).astype(int)
     diff_to_small = np.concatenate((diff_to_small, np.array([0])))
-    start_burst_idxs = np.where(np.diff(diff_to_small) == 1)[0] + 1
+    start_burst_idxs = np.where(np.diff(np.insert(diff_to_small, 0, 0)) == 1)[0]
     end_burst_idxs = np.where(np.diff(diff_to_small) == -1)[0] + 1
     diff_to_small[end_burst_idxs] = 1  # do not mistake burst ends as single spikes
     single_spike_idxs = np.where(diff_to_small == 0)[0]

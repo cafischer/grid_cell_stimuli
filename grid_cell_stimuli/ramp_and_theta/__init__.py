@@ -4,6 +4,7 @@ import numpy as np
 import os
 from scipy.signal import firwin, freqz, kaiserord
 from grid_cell_stimuli import compute_fft, get_nyquist_rate
+import copy
 
 
 def get_ramp_and_theta(v, dt, ripple_attenuation, transition_width, cutoff_ramp, cutoff_theta_low, cutoff_theta_high,
@@ -11,21 +12,31 @@ def get_ramp_and_theta(v, dt, ripple_attenuation, transition_width, cutoff_ramp,
     dt_sec = dt / 1000
     nyq_rate = get_nyquist_rate(dt_sec)
     N, beta = kaiserord(ripple_attenuation, transition_width / nyq_rate)
+    v_true = copy.copy(v)
     if pad_if_to_short and N > len(v):
-        pad_len = int(np.round((N - len(v)) / 2))
+        pad_len = int(np.ceil((N - len(v)) / 2)) - 1
         v = np.pad(v, pad_len, mode='edge')
     else:
         assert N <= len(v)  # filter not bigger than data to filter
     filter_ramp = firwin(N + 1, cutoff_ramp / nyq_rate, window=('kaiser', beta), pass_zero=True)
     filter_theta = firwin(N + 1, [cutoff_theta_low / nyq_rate, cutoff_theta_high / nyq_rate], window=('kaiser', beta),
                           pass_zero=False)  # pass_zero seems to flip from bandpass to bandstop
-    v_ramp_pad = np.pad(v, int(round(len(filter_ramp) / 2)), mode='edge')
-    v_theta_pad = np.pad(v, int(round(len(filter_theta) / 2)), mode='edge')
+    v_ramp_pad = np.pad(v, int(np.ceil(len(filter_ramp) / 2))-1, mode='edge')
+    v_theta_pad = np.pad(v, int(np.ceil(len(filter_theta) / 2))-1, mode='edge')
     ramp = np.convolve(v_ramp_pad, filter_ramp, mode='valid')
     theta = np.convolve(v_theta_pad, filter_theta, mode='valid')
-    if pad_if_to_short and N > len(v):
+    if pad_if_to_short and N > len(v_true):
         ramp = ramp[pad_len: -pad_len]
         theta = theta[pad_len: -pad_len]
+    # too_long = len(ramp) - len(v)
+    # if too_long % 2 == 0:
+    #     too_long_s = too_long_e = int(too_long / 2)
+    # else:
+    #     too_long_s = int(np.ceil(too_long / 2))
+    #     too_long_e = int(np.floor(too_long / 2))
+    # ramp = ramp[too_long_s: -too_long_e]
+    # theta = theta[too_long_s: -too_long_e]
+    assert len(ramp) == len(theta) == len(v_true)
     t_ramp_theta = np.arange(0, len(ramp) * dt, dt)
     return ramp, theta, t_ramp_theta, filter_ramp, filter_theta
 
