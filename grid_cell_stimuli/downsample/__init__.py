@@ -12,7 +12,8 @@ def antialias_and_downsample(v, dt, ripple_attenuation, transition_width, cutoff
     assert N < len(v)  # filter not bigger than data to filter
     filter = firwin(N + 1, cutoff_freq / nyq_rate, window=('kaiser', beta),
                     pass_zero=True)  # pass_zeros True for low pass filter
-    v_antialiased = np.convolve(v, filter, mode='same')
+    v_pad = np.pad(v, int(round(len(filter)/2)), mode='edge')
+    v_antialiased = np.convolve(v_pad, filter, mode='valid')
     t_antialiased = np.arange(0, len(v_antialiased) * dt, dt)
 
     assert dt_new_max > dt
