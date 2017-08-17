@@ -32,7 +32,7 @@ def get_ISI_hist_for_intervals(v, t, AP_threshold, bins, indices):
     return np.sum(ISI_hist, 0)
 
 
-def plot_ISI_hist(ISI_hist, bins, save_dir):
+def plot_ISI_hist(ISI_hist, bins, save_dir, show=False):
     width = bins[1] - bins[0]
 
     pl.figure()
@@ -40,10 +40,11 @@ def plot_ISI_hist(ISI_hist, bins, save_dir):
     pl.xlabel('ISI (ms)', fontsize=16)
     pl.ylabel('Count', fontsize=16)
     pl.savefig(os.path.join(save_dir, 'ISI_hist.svg'))
-    pl.show()
+    if show:
+        pl.show()
 
 
-def plot_ISI_hist_into_outof_field(ISI_hist_into, ISI_hist_outof, bins, save_dir):
+def plot_ISI_hist_into_outof_field(ISI_hist_into, ISI_hist_outof, bins, save_dir, show=False):
     width = bins[1] - bins[0]
 
     pl.figure()
@@ -52,5 +53,6 @@ def plot_ISI_hist_into_outof_field(ISI_hist_into, ISI_hist_outof, bins, save_dir
     pl.xlabel('ISI (ms)', fontsize=16)
     pl.ylabel('Count', fontsize=16)
     pl.legend(fontsize=16)
-    pl.savefig(os.path.join(save_dir, 'ISI_hist.svg'))
-    pl.show()
+    pl.savefig(os.path.join(save_dir, 'ISI_hist_into_outof.svg'))
+    if show:
+        pl.show()

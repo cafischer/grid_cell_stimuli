@@ -41,50 +41,53 @@ def get_ramp_and_theta(v, dt, ripple_attenuation, transition_width, cutoff_ramp,
     return ramp, theta, t_ramp_theta, filter_ramp, filter_theta
 
 
-def plot_filter(filter_ramp, filter_theta, dt, save_dir):
+def plot_filter(filter_ramp, filter_theta, dt, save_dir, show=False):
     nyq_rate = get_nyquist_rate(dt / 1000)
 
     pl.figure()
     w, h = freqz(filter_ramp, worN=int(round(nyq_rate / 0.01)))
     pl.plot((w / np.pi) * nyq_rate, np.absolute(h), 'g', label='Ramp')
     w, h = freqz(filter_theta, worN=int(round(nyq_rate / 0.01)))
-    pl.plot((w / np.pi) * nyq_rate, np.absolute(h), 'b', label='Theta')
+    pl.plot((w / np.pi) * nyq_rate, np.absolute(h), 'darkorange', label='Theta')
     pl.xlabel('Frequency (Hz)', fontsize=16)
     pl.ylabel('Gain', fontsize=16)
     pl.ylim(-0.05, 1.05)
     pl.xlim(0, 20)
     pl.legend(fontsize=16)
     pl.savefig(os.path.join(save_dir, 'gain_filter.svg'))
-    pl.show()
+    if show:
+        pl.show()
 
 
-def plot_spectrum(v, ramp, theta, dt, save_dir):
+def plot_spectrum(v, ramp, theta, dt, save_dir, show=False):
     dt_sec = dt / 1000
 
     pl.figure()
     v_fft, freqs = compute_fft(v, dt_sec)
-    pl.plot(freqs, np.abs(v_fft) ** 2, 'k', label='V')
+    pl.plot(freqs, np.abs(v_fft) ** 2, 'k', label='Membrane Potential')
     ramp_fft, freqs = compute_fft(ramp, dt_sec)
     pl.plot(freqs, np.abs(ramp_fft) ** 2, 'g', label='Ramp')
     theta_fft, freqs = compute_fft(theta, dt_sec)
-    pl.plot(freqs, np.abs(theta_fft) ** 2, 'b', label='Theta')
+    pl.plot(freqs, np.abs(theta_fft) ** 2, 'darkorange', label='Theta')
     pl.xlabel('Frequency', fontsize=16)
     pl.ylabel('Power', fontsize=16)
     pl.xlim(0, 50)
     pl.ylim(0, np.max(np.abs(theta_fft) ** 2))
     pl.legend(fontsize=16)
     pl.savefig(os.path.join(save_dir, 'power_spectrum.svg'))
-    pl.show()
+    if show:
+        pl.show()
 
 
-def plot_v_ramp_theta(v, t, ramp, theta, t_ramp_theta, save_dir):
+def plot_v_ramp_theta(v, t, ramp, theta, t_ramp_theta, save_dir, show=False):
     pl.figure()
-    pl.plot(t, v, 'k', label='Membrane potential')
+    pl.plot(t, v, 'k', label='Membrane Potential')
     pl.plot(t_ramp_theta, ramp, 'g', linewidth=2, label='Ramp')
-    pl.plot(t_ramp_theta, theta + v[0], 'b', linewidth=2, label='Theta')
+    pl.plot(t_ramp_theta, theta + v[0], 'darkorange', linewidth=2, label='Theta')
     pl.xlabel('t')
     pl.ylabel('Voltage (mV)', fontsize=16)
     pl.xlabel('Time (ms)', fontsize=16)
     pl.legend(fontsize=16)
     pl.savefig(os.path.join(save_dir, 'ramp_and_theta.svg'))
-    pl.show()
+    if show:
+        pl.show()

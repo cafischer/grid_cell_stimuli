@@ -23,15 +23,16 @@ def antialias_and_downsample(v, dt, ripple_attenuation, transition_width, cutoff
     return v_downsampled, t_downsampled, filter
 
 
-def plot_v_downsampled(v, t, v_downsampled, t_downsampled, save_dir):
+def plot_v_downsampled(v, t, v_downsampled, t_downsampled, save_dir, show=False):
     pl.figure()
-    pl.plot(t, v, 'b', label='$V_{APs\ removed}$')
-    pl.plot(t_downsampled, v_downsampled, 'g', label='$V_{downsampled}$')
+    pl.plot(t, v, 'k', label='$V_{APs\ removed}$')
+    pl.plot(t_downsampled, v_downsampled, 'b', label='$V_{downsampled}$')
     pl.ylabel('Membrane potential (mV)', fontsize=16)
     pl.xlabel('Time (ms)', fontsize=16)
     pl.legend(fontsize=16)
     pl.savefig(os.path.join(save_dir, 'v_downsampled.svg'))
-    pl.show()
+    if show:
+        pl.show()
 
 
 def plot_filter(filter, dt, save_dir):
@@ -39,7 +40,7 @@ def plot_filter(filter, dt, save_dir):
 
     pl.figure()
     w, h = freqz(filter, worN=int(round(nyq_rate / 0.1)))
-    pl.plot((w / np.pi) * nyq_rate, np.absolute(h))
+    pl.plot((w / np.pi) * nyq_rate, np.absolute(h), 'b')
     pl.xlabel('Frequency (Hz)', fontsize=16)
     pl.ylabel('Gain', fontsize=16)
     pl.ylim(-0.05, 1.05)

@@ -42,7 +42,7 @@ def get_start_end_indices(AP_onsets, idx_after, idx_before, v_APs_removed):
     return start_idxs, end_idxs
 
 
-def plot_v_APs_removed(v_APs_removed, v, t, save_dir):
+def plot_v_APs_removed(v_APs_removed, v, t, save_dir, show=False):
     pl.figure()
     pl.plot(t, v, 'k', label='$V$')
     pl.plot(t, v_APs_removed, 'b', label='$V_{APs\ removed}$')
@@ -50,4 +50,5 @@ def plot_v_APs_removed(v_APs_removed, v, t, save_dir):
     pl.xlabel('Time (ms)', fontsize=16)
     pl.legend(fontsize=16)
     pl.savefig(os.path.join(save_dir, 'v_APs_removed.svg'))
-    pl.show()
+    if show:
+        pl.show()
