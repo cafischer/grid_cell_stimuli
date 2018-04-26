@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name='grid_cell_stimuli',
       version='0.1',
@@ -7,5 +7,5 @@ setup(name='grid_cell_stimuli',
       author='Caroline Fischer',
       author_email='coralinefischer@gmail.com',
       license='',
-      packages=['grid_cell_stimuli'],
+      packages=find_packages(),
       zip_safe=False)

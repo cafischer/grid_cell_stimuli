@@ -4,6 +4,7 @@ import matplotlib.pyplot as pl
 import os
 from scipy.signal import argrelmax
 from scipy.stats import linregress
+pl.style.use('paper')
 
 
 def get_spike_phases(AP_onsets, t, theta, order, dist_to_AP):
@@ -44,13 +45,23 @@ def compute_phase_precession(phases, phases_pos):
     return slope, intercept, best_shift
 
 
-def plot_phase_hist(phases, save_dir, show=False):
+def plot_phase_hist(phases, save_dir, mean_phase=None, std_phase=None, show=False):
     pl.figure()
-    pl.hist(phases, bins=np.arange(0, 360 + 10, 10), weights=np.ones(len(phases)) / len(phases), color='0.5')
-    pl.xlabel('Phase ($^{\circ}$)', fontsize=16)
-    pl.ylabel('Normalized Count', fontsize=16)
+    pl.hist(phases, bins=np.arange(0, 360 + 10, 10), color='0.5')
+    pl.xlabel('Phase ($^{\circ}$)')
+    pl.ylabel('Count')
     pl.xlim(0, 360)
-    pl.savefig(os.path.join(save_dir, 'phase_hist.svg'))
+    pl.tight_layout()
+    if mean_phase is not None:
+        pl.axvline(mean_phase, color='r', linewidth=2)
+        if std_phase is not None:
+            pl.axvline((mean_phase-std_phase) % 360, color='r', linestyle='--', linewidth=2)
+            pl.axvline((mean_phase+std_phase) % 360, color='r', linestyle='--',linewidth=2)
+            tick_locs, tick_labels = pl.xticks()
+            pl.xticks(list(tick_locs) + [mean_phase, (mean_phase-std_phase) % 360, (mean_phase+std_phase) % 360],
+                      list(tick_labels) + ['$\mu$', '$-\sigma$', '$+\sigma$'])
+    [t.set_color(i) for (i, t) in zip(['k'] * len(tick_locs) + ['r'] * 3, pl.gca().xaxis.get_ticklabels())]
+    pl.savefig(os.path.join(save_dir, 'phase_hist.png'))
     if show:
         pl.show()
 
@@ -67,8 +78,9 @@ def plot_phase_vs_position_per_run(phases, phases_pos, AP_onsets, track_len, run
         pl.plot(phases_pos_run[i_run], phases_run[i_run], 'o')
     pl.xlim(0, track_len)
     pl.ylim(0, 360)
-    pl.xlabel('Position (cm)', fontsize=16)
-    pl.ylabel('Phase ($^{\circ}$)', fontsize=16)
+    pl.xlabel('Position (cm)')
+    pl.ylabel('Phase ($^{\circ}$)')
+    pl.tight_layout()
     pl.savefig(os.path.join(save_dir, 'phase_vs_position.svg'))
     if show:
         pl.show()
@@ -81,8 +93,9 @@ def plot_phase_precession(phases, phases_pos, slope, intercept, best_shift, save
     pl.plot(phases_pos, slope * phases_pos + intercept, 'r', label='Linear Fit')
     pl.ylim(0, 360)
     pl.xlabel('Position (cm)', fontsize=16)
-    pl.ylabel('Phase ($^{\circ}$)', fontsize=16)
-    pl.legend(fontsize=16)
+    pl.ylabel('Phase ($^{\circ}$)')
+    pl.legend()
+    pl.tight_layout()
     pl.savefig(os.path.join(save_dir, 'phase_precession.svg'))
     if show:
         pl.show()

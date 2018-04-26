@@ -3,17 +3,20 @@ import matplotlib.pyplot as pl
 import numpy as np
 import copy
 import os
-from cell_characteristics.analyze_APs import get_AP_onset_idxs
+from grid_cell_stimuli import get_spike_idxs
+pl.style.use('paper')
 
 
 def remove_APs(v, t, AP_threshold, t_before, t_after):
     dt = t[1] - t[0]
-    AP_onsets = get_AP_onset_idxs(v, threshold=AP_threshold)
     v_APs_removed = copy.copy(v)
     idx_before = int(round(t_before / dt))
     idx_after = int(round(t_after / dt))
 
-    start_idxs, end_idxs = get_start_end_indices(AP_onsets, idx_after, idx_before, v_APs_removed)
+    AP_max_idxs = get_spike_idxs(v, AP_threshold, dt)
+    if len(AP_max_idxs) == 0:
+        return v
+    start_idxs, end_idxs = get_start_end_indices(AP_max_idxs, idx_after, idx_before, v_APs_removed)
 
     for s, e in zip(start_idxs, end_idxs):
         slope = (v_APs_removed[s] - v_APs_removed[e]) / (t[s] - t[e])
@@ -46,9 +49,10 @@ def plot_v_APs_removed(v_APs_removed, v, t, save_dir, show=False):
     pl.figure()
     pl.plot(t, v, 'k', label='$V$')
     pl.plot(t, v_APs_removed, 'b', label='$V_{APs\ removed}$')
-    pl.ylabel('Membrane potential (mV)', fontsize=16)
-    pl.xlabel('Time (ms)', fontsize=16)
-    pl.legend(fontsize=16)
-    pl.savefig(os.path.join(save_dir, 'v_APs_removed.svg'))
+    pl.ylabel('Membrane potential (mV)')
+    pl.xlabel('Time (ms)')
+    pl.legend()
+    pl.tight_layout()
+    pl.savefig(os.path.join(save_dir, 'v_APs_removed.png'))
     if show:
         pl.show()

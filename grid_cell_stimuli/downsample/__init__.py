@@ -4,6 +4,7 @@ import numpy as np
 import os
 from scipy.signal import firwin, freqz, kaiserord
 from grid_cell_stimuli import get_nyquist_rate
+pl.style.use('paper')
 
 
 def antialias_and_downsample(v, dt, ripple_attenuation, transition_width, cutoff_freq, dt_new_max):
