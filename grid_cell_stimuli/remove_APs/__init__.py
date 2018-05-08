@@ -3,7 +3,7 @@ import matplotlib.pyplot as pl
 import numpy as np
 import copy
 import os
-from grid_cell_stimuli import get_spike_idxs
+from grid_cell_stimuli import get_AP_max_idxs
 pl.style.use('paper')
 
 
@@ -13,7 +13,7 @@ def remove_APs(v, t, AP_threshold, t_before, t_after):
     idx_before = int(round(t_before / dt))
     idx_after = int(round(t_after / dt))
 
-    AP_max_idxs = get_spike_idxs(v, AP_threshold, dt)
+    AP_max_idxs = get_AP_max_idxs(v, AP_threshold, dt)
     if len(AP_max_idxs) == 0:
         return v
     start_idxs, end_idxs = get_start_end_indices(AP_max_idxs, idx_after, idx_before, v_APs_removed)

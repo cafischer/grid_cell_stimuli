@@ -2,7 +2,7 @@ import numpy as np
 from cell_characteristics.analyze_APs import get_AP_onset_idxs, get_AP_max_idx
 
 
-def get_spike_idxs(v, AP_threshold, dt, interval=2, v_diff_onset_max=5):
+def get_AP_max_idxs(v, AP_threshold, dt, interval=2, v_diff_onset_max=None):
     """
     Get all indices of the AP maxima.
     :param v: Membrane Potential (mV).
@@ -28,6 +28,36 @@ def get_spike_idxs(v, AP_threshold, dt, interval=2, v_diff_onset_max=5):
     # pl.plot(t[AP_onsets[:-1][~idxs_not_none]], v[AP_onsets[:-1][~idxs_not_none]], 'ob')
     # pl.show()
     return AP_max_idxs
+
+
+def find_all_AP_traces(v, before_AP_idx, after_AP_idx, AP_max_idxs, AP_max_idxs_all):
+    """
+    Find the window around all AP_max_idxs where the window contains no other AP.
+    :param v: Membrane potential.
+    :param before_AP_idx: Length of the window (index) before the AP_max_idx.
+    :param after_AP_idx: Length of the window (index) after the AP_max_idx.
+    :param AP_max_idxs: Indices of the AP maximum (can be a selected subset).
+    :param AP_max_idxs_all: Indices of all AP maxima (to filter out other APs in the window).
+    :return: Matrix of voltage traces containing the window around each AP_max_idx (row: voltage trace (time),
+    column: different APs) or None if no window could be found.
+    """
+    v_APs = []
+    for i, AP_max_idx in enumerate(AP_max_idxs):
+        if AP_max_idx - before_AP_idx >= 0 and AP_max_idx + after_AP_idx < len(v):  # able to draw window
+            v_AP = v[AP_max_idx - before_AP_idx:AP_max_idx + after_AP_idx + 1]
+
+            AP_max_idxs_window = AP_max_idxs_all[np.logical_and(AP_max_idxs_all > AP_max_idx - before_AP_idx,
+                                                            AP_max_idxs_all < AP_max_idx + after_AP_idx + 1)]
+            AP_max_idxs_window = filter(lambda x: x != AP_max_idx, AP_max_idxs_window)  # remove the AP that should be in the window
+            if len(AP_max_idxs_window) == 0:  # check no other APs in the window
+                v_APs.append(v_AP)
+    if len(v_APs) > 1:
+        v_APs = np.vstack(v_APs)
+        return v_APs
+    elif len(v_APs) == 1:
+        return np.array([v_APs])
+    else:
+        return None
 
 
 def compute_fft(y, dt):
