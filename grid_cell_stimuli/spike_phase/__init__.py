@@ -75,17 +75,17 @@ def compute_phase_precession(phases, phases_pos):
     return slope, intercept, best_shift
 
 
-def plot_phase_hist(phases, save_dir, mean_phase=None, std_phase=None, title=None, show=False):
+def plot_phase_hist(phases, save_dir, mean_phase=None, std_phase=None, title=None, color_hist='0.5', color_mean='r'):
     pl.figure()
-    pl.hist(phases, bins=np.arange(0, 360 + 10, 10), color='0.5')
+    pl.hist(phases, bins=np.arange(0, 360 + 10, 10), color=color_hist)
     pl.xlabel('Phase ($^{\circ}$)')
     pl.ylabel('Count')
     pl.xlim(0, 360)
     if mean_phase is not None:
-        pl.axvline(mean_phase, color='r', linewidth=2)
+        pl.axvline(mean_phase, color=color_mean, linewidth=2)
         if std_phase is not None:
-            pl.axvline((mean_phase-std_phase) % 360, color='r', linestyle='--', linewidth=2)
-            pl.axvline((mean_phase+std_phase) % 360, color='r', linestyle='--', linewidth=2)
+            pl.axvline((mean_phase-std_phase) % 360, color=color_mean, linestyle='--', linewidth=2)
+            pl.axvline((mean_phase+std_phase) % 360, color=color_mean, linestyle='--', linewidth=2)
             tick_locs = tick_labels = [0, 90, 180, 270, 360]
             pl.xticks(list(tick_locs) + [mean_phase, (mean_phase-std_phase) % 360, (mean_phase+std_phase) % 360],
                       list(tick_labels) + ['$\mu$', '$-\sigma$', '$+\sigma$'])
@@ -94,11 +94,27 @@ def plot_phase_hist(phases, save_dir, mean_phase=None, std_phase=None, title=Non
         pl.title(title)
     pl.tight_layout()
     pl.savefig(save_dir)
-    if show:
-        pl.show()
 
 
-def plot_phase_vs_position_per_run(phases, phases_pos, AP_onsets, track_len, run_start_idx, save_dir, show=False):
+def plot_phase_hist_on_axes(ax, phases, mean_phase=None, std_phase=None, title=None, color_hist='0.5', color_mean='r',
+                            alpha=0.5, label='', y_max_vline=1):
+    ax.hist(phases, bins=np.arange(0, 360 + 10, 10), color=color_hist, alpha=alpha, label=label)
+    ax.set_xlim(0, 360)
+    if mean_phase is not None:
+        ax.axvline(mean_phase, ymax=y_max_vline, color=color_mean, linewidth=2)
+        if std_phase is not None:
+            ax.axvline((mean_phase - std_phase) % 360, color=color_mean, linestyle='--', linewidth=2)
+            ax.axvline((mean_phase + std_phase) % 360, color=color_mean, linestyle='--', linewidth=2)
+            tick_locs = tick_labels = [0, 90, 180, 270, 360]
+            ax.set_xticks(tick_locs)  # + [mean_phase, (mean_phase - std_phase) % 360, (mean_phase + std_phase) % 360])
+            ax.set_xticklabels(tick_labels)  # + ['$\mu$', '$-\sigma$', '$+\sigma$'])
+            [t.set_color(i) for (i, t) in zip(['k'] * len(tick_locs) + ['r'] * 3, ax.xaxis.get_ticklabels())]
+    if title is not None:
+        ax.title(title)
+    pl.tight_layout()
+
+
+def plot_phase_vs_position_per_run(phases, phases_pos, AP_onsets, track_len, run_start_idx, save_dir):
     phases_run = [0] * (len(run_start_idx) - 1)
     phases_pos_run = [0] * (len(run_start_idx) - 1)
     for i_run, (run_start, run_end) in enumerate(zip(run_start_idx[:-1], run_start_idx[1:])):
@@ -114,8 +130,6 @@ def plot_phase_vs_position_per_run(phases, phases_pos, AP_onsets, track_len, run
     pl.ylabel('Phase ($^{\circ}$)')
     pl.tight_layout()
     pl.savefig(os.path.join(save_dir, 'phase_vs_position.svg'))
-    if show:
-        pl.show()
         
 
 def plot_phase_precession(phases, phases_pos, slope, intercept, best_shift, save_dir, show=False):
