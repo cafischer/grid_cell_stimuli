@@ -102,3 +102,26 @@ def plot_v_ramp_theta(v, t, ramp, theta, t_ramp_theta, save_dir=None, show=False
         pl.savefig(os.path.join(save_dir, 'ramp_and_theta.png'))
     if show:
         pl.show()
+        
+        
+def filter(v, dt, ripple_attenuation, transition_width, cutoff_low, cutoff_high, pad_if_to_short=False):
+    dt_sec = dt / 1000.
+    nyq_rate = get_nyquist_rate(dt_sec)
+    N, beta = kaiserord(ripple_attenuation, transition_width / nyq_rate)
+    v_true = copy.copy(v)
+    if pad_if_to_short and N > len(v):
+        pad_len = int(np.ceil((N - len(v)) / 2.)) - 1
+        v = np.pad(v, pad_len, mode='edge')
+    else:
+        assert N <= len(v)  # filter not bigger than data to filter
+    filter = firwin(N + 1, [cutoff_low / nyq_rate, cutoff_high / nyq_rate], window=('kaiser', beta),
+                          pass_zero=False)  # pass_zero seems to flip from bandpass to bandstop
+
+    v_pad = np.pad(v, (int(np.floor(len(filter) / 2.)), int(np.ceil(len(filter) / 2.)) - 1),
+                   mode='edge')
+    filtered = np.convolve(v_pad, filter, mode='valid')
+    if pad_if_to_short and N > len(v_true):
+        filtered = filtered[pad_len: -pad_len]
+    assert len(filtered) == len(v_true)
+    t = np.arange(len(filtered)) * dt
+    return filtered, t, filter

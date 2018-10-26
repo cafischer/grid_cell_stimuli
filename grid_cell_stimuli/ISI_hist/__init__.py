@@ -3,7 +3,11 @@ import matplotlib.pyplot as pl
 import numpy as np
 import os
 from itertools import combinations, product
-pl.style.use('paper')
+from analyze_in_vivo.load.load_domnisoru import get_celltype
+from cell_characteristics.analyze_APs import get_AP_onset_idxs
+from matplotlib.colors import to_rgb
+from cell_fitting.util import change_color_brightness
+pl.style.use('paper_subplots')
 
 
 def get_ISIs(AP_idxs, t):
@@ -44,14 +48,15 @@ def get_ISI_hists_into_outof_field(v, t, AP_threshold, bins, field_pos_idxs):
 def get_ISI_hist_for_intervals(v, t, AP_threshold, bins, indices):
     ISI_hist = np.zeros((len(indices), len(bins) - 1))
     for i, (s, e) in enumerate(indices):
-        ISIs_ = get_ISIs(v[s:e], t, AP_threshold)
+        AP_idxs = get_AP_onset_idxs(v[s:e], AP_threshold)
+        ISIs_ = get_ISIs(AP_idxs, t)
         ISI_hist[i, :], bin_edges = np.histogram(ISIs_, bins=bins)
     return np.sum(ISI_hist, 0)
 
 
 def plot_ISI_hist(ISI_hist, bins, save_dir=None, title=None):
     pl.figure()
-    pl.bar(bins[:-1], ISI_hist, bins[1] - bins[0], color='0.5')
+    pl.bar(bins[:-1], ISI_hist, bins[1] - bins[0], color='0.5', align='edge')
     pl.xlabel('ISI (ms)')
     pl.ylabel('Count')
     if title is not None:
@@ -65,8 +70,8 @@ def plot_ISI_hist_into_outof_field(ISI_hist_into, ISI_hist_outof, bins, save_dir
     width = bins[1] - bins[0]
 
     pl.figure()
-    pl.bar(bins[:-1], ISI_hist_into, width, color='r', alpha=0.5, label='into')
-    pl.bar(bins[:-1], ISI_hist_outof, width, color='b', alpha=0.5, label='outof')
+    pl.bar(bins[:-1], ISI_hist_into, width, color='r', alpha=0.5, label='into', align='edge')
+    pl.bar(bins[:-1], ISI_hist_outof, width, color='b', alpha=0.5, label='outof', align='edge')
     pl.xlabel('ISI (ms)')
     pl.ylabel('Count')
     pl.legend()
@@ -89,6 +94,7 @@ def plot_cumulative_ISI_hist(cum_ISI_hist_x, cum_ISI_hist_y, xlim=(None, None), 
 
 def plot_cumulative_ISI_hist_all_cells(cum_ISI_hist_y, cum_ISI_hist_x, cum_ISI_hist_y_avg, cum_ISI_hist_x_avg,
                                        cell_ids, max_x=200, save_dir=None):
+    save_dir_data = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
     cm = pl.cm.get_cmap('plasma')
     colors = cm(np.linspace(0, 1, len(cell_ids)))
     cum_ISI_hist_x_avg_with_end = np.insert(cum_ISI_hist_x_avg, len(cum_ISI_hist_x_avg), max_x)
@@ -97,14 +103,71 @@ def plot_cumulative_ISI_hist_all_cells(cum_ISI_hist_y, cum_ISI_hist_x, cum_ISI_h
     pl.plot(cum_ISI_hist_x_avg_with_end, cum_ISI_hist_y_avg_with_end, label='all',
             drawstyle='steps-post', linewidth=2.0, color='0.4')
     for i, cell_id in enumerate(cell_ids):
+        if get_celltype(cell_id, save_dir_data) == 'stellate':
+            label = cell_id + ' ' + u'\u2605'
+        elif get_celltype(cell_id, save_dir_data) == 'pyramidal':
+            label = cell_id + ' ' + u'\u25B4'
+        else:
+            label = cell_id
         cum_ISI_hist_x_with_end = np.insert(cum_ISI_hist_x[i], len(cum_ISI_hist_x[i]), max_x)
         cum_ISI_hist_y_with_end = np.insert(cum_ISI_hist_y[i], len(cum_ISI_hist_y[i]), 1.0)
-        pl.plot(cum_ISI_hist_x_with_end, cum_ISI_hist_y_with_end, label=cell_id, color=colors[i],
+
+        ISI_burst = 10.0  # ms
+        cross_burst = np.where(cum_ISI_hist_x_with_end >= ISI_burst)[0][0]
+        cross_burst_y = cum_ISI_hist_y_with_end[cross_burst]
+        if cross_burst_y < 0.1:
+            label = '* ' + label
+
+        pl.plot(cum_ISI_hist_x_with_end, cum_ISI_hist_y_with_end, label=label, color=colors[i],
                 drawstyle='steps-post')
     pl.xlabel('ISI (ms)')
     pl.ylabel('CDF')
     pl.xlim(0, max_x)
-    pl.legend(fontsize=10, loc='lower right')
+    if len(cell_ids) > 6:
+        pl.legend(fontsize=7, loc='lower right')
+    else:
+        pl.legend(fontsize=10, loc='lower right')
+    pl.tight_layout()
+    if save_dir is not None:
+        pl.savefig(os.path.join(save_dir, 'cum_ISI_hist.png'))
+
+
+def plot_cumulative_ISI_hist_all_cells_with_bursty(cum_ISI_hist_y, cum_ISI_hist_x,
+                                                   cum_ISI_hist_y_avg_bursty, cum_ISI_hist_x_avg_bursty,
+                                                   cum_ISI_hist_y_avg_nonbursty, cum_ISI_hist_x_avg_nonbursty,
+                                                   cell_ids, burst_label, max_x=200, save_dir=None):
+    save_dir_data = '/home/cf/Phd/programming/projects/analyze_in_vivo/analyze_in_vivo/data/domnisoru'
+
+    cum_ISI_hist_x_avg_bursty = np.insert(cum_ISI_hist_x_avg_bursty, len(cum_ISI_hist_x_avg_bursty), max_x)
+    cum_ISI_hist_x_avg_nonbursty = np.insert(cum_ISI_hist_x_avg_nonbursty, len(cum_ISI_hist_x_avg_nonbursty), max_x)
+    cum_ISI_hist_y_avg_bursty = np.insert(cum_ISI_hist_y_avg_bursty, len(cum_ISI_hist_y_avg_bursty), 1.0)
+    cum_ISI_hist_y_avg_nonbursty = np.insert(cum_ISI_hist_y_avg_nonbursty, len(cum_ISI_hist_y_avg_nonbursty), 1.0)
+
+    pl.figure()
+    pl.plot(cum_ISI_hist_x_avg_nonbursty, cum_ISI_hist_y_avg_nonbursty, label='Non-bursty',
+            drawstyle='steps-post', linewidth=2.0, color='b')
+    pl.plot(cum_ISI_hist_x_avg_bursty, cum_ISI_hist_y_avg_bursty, label='Bursty',
+            drawstyle='steps-post', linewidth=2.0, color='r')
+
+    for i, cell_id in enumerate(cell_ids):
+        cum_ISI_hist_x_with_end = np.insert(cum_ISI_hist_x[i], len(cum_ISI_hist_x[i]), max_x)
+        cum_ISI_hist_y_with_end = np.insert(cum_ISI_hist_y[i], len(cum_ISI_hist_y[i]), 1.0)
+
+        # cross_burst = np.where(cum_ISI_hist_x_with_end >= burst_ISI)[0][0]
+        # cross_burst_y = cum_ISI_hist_y_with_end[cross_burst]
+        # if cross_burst_y < 0.1:
+        #     bursty = False
+        # else:
+        #     bursty = True
+
+        color = 'r' if burst_label[i] else 'b'
+        pl.plot(cum_ISI_hist_x_with_end, cum_ISI_hist_y_with_end,
+                color=change_color_brightness(to_rgb(color), 30, 'brighter'), alpha=0.5,
+                drawstyle='steps-post')
+    pl.xlabel('ISI (ms)')
+    pl.ylabel('CDF')
+    pl.xlim(0, max_x)
+    pl.legend(loc='lower right')
     pl.tight_layout()
     if save_dir is not None:
         pl.savefig(os.path.join(save_dir, 'cum_ISI_hist.png'))

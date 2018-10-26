@@ -30,14 +30,15 @@ def get_AP_max_idxs(v, AP_threshold, dt, interval=2, v_diff_onset_max=None):
     return AP_max_idxs
 
 
-def find_all_AP_traces(v, before_AP_idx, after_AP_idx, AP_max_idxs, AP_max_idxs_all):
+def find_all_AP_traces(v, before_AP_idx, after_AP_idx, AP_max_idxs, AP_max_idxs_all=None):
     """
     Find the window around all AP_max_idxs where the window contains no other AP.
     :param v: Membrane potential.
     :param before_AP_idx: Length of the window (index) before the AP_max_idx.
     :param after_AP_idx: Length of the window (index) after the AP_max_idx.
     :param AP_max_idxs: Indices of the AP maximum (can be a selected subset).
-    :param AP_max_idxs_all: Indices of all AP maxima (to filter out other APs in the window).
+    :param AP_max_idxs_all: Indices of all AP maxima (to filter out other APs in the window). If None no APs will be
+           filtered out.
     :return: Matrix of voltage traces containing the window around each AP_max_idx (row: voltage trace (time),
     column: different APs) or None if no window could be found.
     """
@@ -46,16 +47,17 @@ def find_all_AP_traces(v, before_AP_idx, after_AP_idx, AP_max_idxs, AP_max_idxs_
         if AP_max_idx - before_AP_idx >= 0 and AP_max_idx + after_AP_idx < len(v):  # able to draw window
             v_AP = v[AP_max_idx - before_AP_idx:AP_max_idx + after_AP_idx + 1]
 
-            AP_max_idxs_window = AP_max_idxs_all[np.logical_and(AP_max_idxs_all > AP_max_idx - before_AP_idx,
-                                                            AP_max_idxs_all < AP_max_idx + after_AP_idx + 1)]
-            AP_max_idxs_window = filter(lambda x: x != AP_max_idx, AP_max_idxs_window)  # remove the AP that should be in the window
-            if len(AP_max_idxs_window) == 0:  # check no other APs in the window
+            if AP_max_idxs_all is not None:  # check that there are no other APs in the window
+                AP_max_idxs_window = AP_max_idxs_all[np.logical_and(AP_max_idxs_all > AP_max_idx - before_AP_idx,
+                                                                AP_max_idxs_all < AP_max_idx + after_AP_idx + 1)]
+                AP_max_idxs_window = filter(lambda x: x != AP_max_idx, AP_max_idxs_window)  # remove the AP that should be in the window
+                if len(AP_max_idxs_window) == 0:  # check no other APs in the window
+                    v_APs.append(v_AP)
+            else:
                 v_APs.append(v_AP)
-    if len(v_APs) > 1:
+    if len(v_APs) > 0:
         v_APs = np.vstack(v_APs)
         return v_APs
-    elif len(v_APs) == 1:
-        return np.array([v_APs])
     else:
         return None
 
